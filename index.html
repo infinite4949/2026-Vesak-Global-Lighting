@@ -202,11 +202,34 @@
     });
 
     onChildAdded(pointsRef, (data) => {
-        const val = data.val();
-        const lotusIcon = L.divIcon({ className: 'lotus-marker', html: '🪷', iconSize: [40, 40], iconAnchor: [20, 20] });
-        const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
-        marker.bindPopup(`<div style="text-align:center;"><b style="color:gold;">${i18n[currentLang].popup}</b><br><p style="margin:10px 0;">${val.q_zh}</p><p style="font-style:italic; font-size:0.9em; color:#ccc;">${val.q_en}</p></div>`).openPopup();
+    const val = data.val();
+    
+    // 建立蓮花圖示，必須設定 iconSize 否則會是 0x0 像素
+    const lotusIcon = L.divIcon({ 
+        className: 'lotus-marker', 
+        html: '🪷', 
+        iconSize: [40, 40], 
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -15] // 讓彈出視窗出現在蓮花上方
     });
+
+    // 建立標記並加入地圖
+    const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
+    
+    // 綁定彈出視窗（合併中英文）
+    const popupContent = `
+        <div style="text-align:center; min-width:200px;">
+            <b style="color:gold; font-size:1.1em;">${i18n[currentLang].popup}</b>
+            <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
+            <p style="margin:5px 0; color:white; line-height:1.5;">${val.q_zh || ""}</p>
+            <p style="font-style:italic; font-size:0.85em; color:#bbb; margin-top:8px;">${val.q_en || ""}</p>
+        </div>`;
+        
+    marker.bindPopup(popupContent);
+    
+    // 如果是剛剛自己點的那一盞，自動打開視窗
+    // marker.openPopup(); 
+});
 
     let lastCount = 0;
     function updateDisplay(count) {
@@ -218,4 +241,5 @@
 </script>
 </body>
 </html>
+
 
