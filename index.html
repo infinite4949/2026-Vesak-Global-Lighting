@@ -8,36 +8,28 @@
     <style>
         :root { --gold: #ffd700; --deep-blue: #0a192f; }
         body { margin: 0; background: var(--deep-blue); color: white; font-family: "Microsoft JhengHei", sans-serif; text-align: center; }
-        nav { padding: 20px; display: flex; justify-content: space-between; background: rgba(10,25,47,0.9); position: fixed; width: 100%; z-index: 1000; box-sizing: border-box; }
-        .lang-btn { color: var(--gold); background: none; border: 1px solid var(--gold); padding: 5px 15px; border-radius: 15px; cursor: pointer; }
-        .hero { padding: 120px 20px 40px; }
-        .buddha-img { width: 220px; border-radius: 50%; box-shadow: 0 0 40px var(--gold); margin-bottom: 20px; }
-        #map { height: 500px; width: 95%; max-width: 1100px; margin: 20px auto; border-radius: 15px; border: 2px solid var(--gold); z-index: 1; }
+        nav { padding: 20px; display: flex; justify-content: space-between; background: rgba(10,25,47,0.95); position: fixed; width: 100%; z-index: 1000; box-sizing: border-box; border-bottom: 1px solid rgba(255,215,0,0.3); }
+        .lang-btn { color: var(--gold); background: none; border: 1px solid var(--gold); padding: 8px 18px; border-radius: 20px; cursor: pointer; transition: 0.3s; }
+        .hero { padding: 130px 20px 40px; }
+        .buddha-img { width: 220px; border-radius: 50%; box-shadow: 0 0 50px var(--gold); margin-bottom: 25px; }
+        #map { height: 500px; width: 95%; max-width: 1100px; margin: 20px auto; border-radius: 20px; border: 2px solid var(--gold); z-index: 1; position: relative; }
         
-        /* 必須給予寬高，蓮花才會顯示 */
-.lotus-marker {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    width: 40px !important; 
-    height: 40px !important;
-    font-size: 32px !important;
-    background: transparent !important;
-    border: none !important;
-    animation: breathe 2.5s infinite ease-in-out;
-    cursor: pointer;
-    z-index: 1000 !important;
-}
+        /* 蓮花動畫與顯示修正 */
+        @keyframes breathe {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+            50% { transform: scale(1.4); filter: drop-shadow(0 0 15px gold); opacity: 1; }
+            100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+        }
+        .lotus-marker { 
+            display: flex !important; justify-content: center; align-items: center; 
+            font-size: 32px !important; animation: breathe 2.5s infinite; 
+            background: none !important; border: none !important; width: 40px !important; height: 40px !important;
+        }
 
-@keyframes breathe {
-    0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
-    50% { transform: scale(1.4); filter: drop-shadow(0 0 15px gold); opacity: 1; }
-    100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
-}
-        /* 加大版彈出視窗 */
-        .leaflet-popup-content-wrapper { background: #112240 !important; color: white !important; border: 2px solid var(--gold); width: 320px !important; }
-        .leaflet-popup-content { font-size: 1.1em; line-height: 1.6; }
-        .stats-badge { margin: 20px; color: var(--gold); font-size: 1.3em; border: 2px solid var(--gold); padding: 10px 25px; border-radius: 50px; display: inline-block; }
+        /* 視窗加大 */
+        .leaflet-popup-content-wrapper { background: #112240 !important; color: white !important; border: 2px solid var(--gold); width: 320px !important; border-radius: 15px; }
+        .leaflet-popup-content { font-size: 1.1em; line-height: 1.6; padding: 10px; }
+        .stats-badge { margin: 20px; color: var(--gold); font-size: 1.3em; border: 2px solid var(--gold); padding: 10px 25px; border-radius: 50px; display: inline-block; background: rgba(255,215,0,0.1); }
     </style>
 </head>
 <body>
@@ -51,20 +43,16 @@
     <img src="buddha_vesak.png" class="buddha-img">
     <h2 id="quote-text">「願慈悲之光，照破世間黑暗。」</h2>
     <p id="description">點擊地圖點亮蓮花，您的善念將與全球同步顯示。</p>
-    <div class="stats-badge" id="stats-area">
-        全球已匯聚：<span id="count">0</span> 盞心燈
-    </div>
+    <div class="stats-badge" id="stats-area">全球已匯聚：<span id="count">0</span> 盞心燈</div>
 </div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // --- 填入您的 Firebase 配置 ---
     const firebaseConfig = {
         apiKey: "AIzaSyAFdI-4wsS4ucAi5SlDvX7Uha4SZNnuXQ8",
   authDomain: "vesak-global-lighting.firebaseapp.com",
@@ -79,115 +67,114 @@
     const db = getDatabase(app);
     const pointsRef = ref(db, 'points');
 
+    const quotes = [
+    { zh: "慈悲心是一切功德的母體，有了慈悲，就有了佛法。", en: "Compassion is the source of all merits; with it comes the Dharma." },
+    { zh: "提得起是聰明，放得下是智慧，提起放下才是自在。", en: "To lift is clever; to let go is wisdom. Mastering both is freedom." },
+    { zh: "心好命就好，慈悲聖潔好，內在祥和能轉化外在荒涼。", en: "A good heart brings a good life; inner peace transforms desolation." },
+    { zh: "給人信心，給人希望，給人方便，是人與人最美的連結。", en: "Give confidence, hope, and convenience; these are the best links." },
+    { zh: "願慈悲之光，照破世間黑暗，讓受苦靈魂得到慰藉。", en: "May the light of compassion break the darkness and comfort souls." },
+    { zh: "心中有佛，所見皆佛，當我們以佛眼看世界，世界即清淨。", en: "With Buddha in heart, all is Buddha. His eyes see a pure world." },
+    { zh: "知足者，雖臥地上猶為安樂；不知足者，處天堂亦不稱意。", en: "The content are happy on the ground; the greedy are sad in heaven." },
+    { zh: "微笑是跨越國界的語言，真誠則是通往心靈的唯一道路。", en: "A smile crosses borders; sincerity is the only path to the soul." },
+    { zh: "一花一世界，一葉一如來，萬物皆有其覺醒的佛性。", en: "A world in a flower, a Buddha in a leaf. All have Buddha-nature." },
+    { zh: "不忘初心，方得始終，在紛擾世間守住純淨最是難得。", en: "Stay true to your intent; keep your purity amidst worldly chaos." },
+    { zh: "廣結善緣，事事順利，在別人的需要上看見自己的責任。", en: "Build good affinities for success. See duty in others' needs." },
+    { zh: "心安茅屋穩，性定菜根香，平凡生活也能品出真味。", en: "A calm mind stabilizes a hut; pure life has the truest taste." },
+    { zh: "靜坐常思己過，閒談莫論人非，律己要嚴，待人要寬。", en: "Reflect on your faults in silence; be strict with self and kind." },
+    { zh: "口說好話如吐蓮花，心想好意如播良種，身行好事如修坦途。", en: "Good words are lotuses; good thoughts are seeds; good deeds are paths." },
+    { zh: "忍一時風平浪靜，退一步海闊天空，寬容是心靈的昇華。", en: "Endurance brings calm; stepping back brings space and tolerance." },
+    { zh: "隨緣不是隨便，而是順應自然，盡力之後將結果交給因緣。", en: "Following conditions is not careless; let go after trying." },
+    { zh: "慈悲沒有敵人，智慧不起煩惱，用愛去化解世間的恨。", en: "Compassion has no enemies; resolve hate with love and wisdom." },
+    { zh: "感恩是人生最美妙的音符，它讓貧窮富有，讓孤獨溫暖。", en: "Gratitude is life's best note; it enriches and warms the heart." },
+    { zh: "心中有愛，世界就沒有黑暗，點燃心燈不僅照亮自己也指引他人。", en: "With love, there is no darkness. Lighting your lamp guides all." },
+    { zh: "凡事留餘地，建設好因緣，不要把話說滿，不要把事做絕。", en: "Leave space for good affinity. Never speak or act too harshly." },
+    { zh: "改過必生智慧，護短終必受傷，誠實面對自己的陰影。", en: "Correcting faults breeds wisdom; face your shadows for light." },
+    { zh: "忙，就是進步；苦，就是增上。在磨難中鍛鍊勇氣。", en: "Busyness is progress; hardship is growth. Forge courage in trials." },
+    { zh: "水滴石穿，不是力量大，而是功夫深，唯有恆心能抵達彼岸。", en: "Persistence wears stone. Only constancy reaches the shore." },
+    { zh: "心如止水，亂而不驚，在混亂局勢中保持定力是種修養。", en: "Mind like still water, calm in chaos. Staying centered is a virtue." },
+    { zh: "一念之慈，萬眾受惠，一個小善舉能透過蝴蝶效應溫暖世界。", en: "One kind thought benefits many. A small deed warms the world." },
+    { zh: "捨得捨得，有捨才有得，放下手中的砂礫才能握住明珠。", en: "To give is to gain. Let go of gravel to hold the precious pearl." },
+    { zh: "平靜的心是最強大的武器，它能讓我們在狂風暴雨中看清路。", en: "A calm mind is a powerful weapon; it sees clearly through storms." },
+    { zh: "面上無嗔是供養，口裡無嗔吐妙香，微笑是最簡單的修行。", en: "A smile is an offering; kind words are a fragrance and practice." },
+    { zh: "惜福、結緣、利人，珍惜現有資源，成就大眾利益。", en: "Cherish blessings, build affinities, and benefit the public." },
+    { zh: "活在當下，不憂往事，不畏未來，心在哪裡，圓滿就在哪裡。", en: "Live now; fear not the past. Where the heart is, fulfillment is." },
+    { zh: "謙虛是智慧的表現，它像稻穗，愈是飽滿成熟愈懂得低頭。", en: "Humility is wisdom. Like ripe rice, the fuller it is, the lower it bows." },
+    { zh: "愛語如春風，能消融心靈冰霜，在傷人言詞前請先換位思考。", en: "Kind words melt icy hearts. Empathize before speaking hurtfully." },
+    { zh: "失敗是成功的墊腳石，只要心燈不滅，跌倒只是為了跳得更穩。", en: "Failure is a stepping stone. Falling is preparation for a leap." },
+    { zh: "放下執著，並非放棄一切，而是不再被外境所轉，找回主動。", en: "Detachment is not giving up, but not being swayed by the world." },
+    { zh: "以德報怨是最高境界，用寬恕代替報復，終結仇恨的循環。", en: "Repay resentment with virtue. Forgiveness ends the cycle of hate." },
+    { zh: "尊師重道，感恩引導，在知識汪洋中，謙卑是承載智慧的容器。", en: "Respect teachers. Humility is the vessel for wisdom in knowledge." },
+    { zh: "誠實無欺是立身根本，欺騙獲得短暫利益，卻輸掉長遠人生。", en: "Honesty is the root. Deceit brings short gain but loses the race." },
+    { zh: "勤儉持家，惜物愛物，簡約的生活就是對自然最大的慈悲。", en: "Be thrifty. Simple living is the greatest mercy to nature." },
+    { zh: "世界和平始於內心和平，平息心中戰火，外在世界自然祥和。", en: "World peace starts within. End inner conflict for outer harmony." },
+    { zh: "法界圓融，萬物共生，體認眾生一體，便不會傷害他人。", en: "Harmony in the Dharma; all coexist. Being one prevents hurting others." },
+    { zh: "自覺與覺他是人生的雙翼，先點亮心燈，再去照亮迷途旅人。", en: "Self-awareness and awakening others are wings. Light the lost." },
+    { zh: "平凡見偉大，簡單見真誠，不需要追求轟烈，真心即是永恆。", en: "See greatness in ordinary. No need for fanfare; truth is eternal." },
+    { zh: "大公無私便是佛心，放下小我私慾，才能看見大我的圓滿。", en: "Selflessness is Buddha's heart. Let go of ego for fulfillment." },
+    { zh: "行善最樂，不為回報，付出的喜悅本身就是最好的報酬。", en: "Goodness is joy. The act of giving is the best reward itself." },
+    { zh: "內心平安，外境自然安寧，當我們不再對抗，世界就會溫柔。", en: "Inner peace brings outer calm. Stop fighting for a kind world." },
+    { zh: "圓滿人生不在擁有多少財富，而在於給予了多少慈悲與溫暖。", en: "Perfect life is not wealth, but the compassion you give the world." },
+    { zh: "正向思考能轉化負能量，看見黑暗中的星光是走出困境的關鍵。", en: "Positive thinking transforms energy. Starlight guides you out." },
+    { zh: "共生共榮，彼此成就，在合作中放下傲慢，體驗和諧力量。", en: "Coexist and prosper. Drop arrogance for the power of harmony." },
+    { zh: "佛光普照，法水長流，願智慧法雨滋潤心田，讓菩提開花。", en: "May wisdom's rain nourish hearts and let Bodhi bloom everywhere." },
+    { zh: "看破世事，心無罣礙，明白了因緣果報，就能泰然面對生滅。", en: "See through the world. Understanding karma lets us face life calmly." },
+    { zh: "慈悲是一束光，穿透堅硬防備，在理解中消融對立的冰牆。", en: "Compassion is light that pierces defenses and melts opposition." },
+    { zh: "真正的富有是內心知足，擁有的再多，心靈空虛也只是乞丐。", en: "True wealth is contentment. An empty soul is but a beggar." },
+    { zh: "不患人之不己知，患不知人也，多去理解他人而非渴望被理解。", en: "Worry not about being unknown. Seek to understand others first." },
+    { zh: "如人飲水冷暖自知，修行是體證，文字替代不了實踐的腳印。", en: "Like drinking water, only you know. Words cannot replace deeds." },
+    { zh: "一念天堂，一念地獄，心念決定處境，轉念就是天堂。", en: "A thought of heaven or hell. Your mindset dictates your reality." },
+    { zh: "愛心是無國界的護照，它能讓我們在任何地方找到心靈故鄉。", en: "Love is a borderless passport; find a spiritual home anywhere." },
+    { zh: "讀書不如行路，行路不如識人，識人不如佛祖點渡。", en: "Experience beats books; meeting people beats travel; Buddha guides all." },
+    { zh: "廣大心量，包容萬物，心量愈大煩惱愈小，世界愈加開闊。", en: "A vast mind embraces all. Larger minds have fewer worries." },
+    { zh: "對失意人莫談得意事，這份體貼是慈悲在細節中的最高展現。", en: "Never boast to the failed. This is the highest form of compassion." },
+    { zh: "求人不如求己，求己不如求佛，求佛是喚醒內在的佛性。", en: "Rely on self over others. Seeking Buddha is awakening the inner one." },
+    { zh: "忙人珍惜光陰，懶人虛擲生命，大忙人往往最有時間。", en: "The busy value time; the lazy waste it. The busy find the most time." },
+    { zh: "微笑是世界上最美的名片，不需成本，卻能創造無比價值。", en: "A smile is the best card. It costs nothing but creates value." },
+    { zh: "吃虧就是便宜，物質看似損失，人格與福報卻是深厚積累。", en: "Loss is gain. Material loss is an accumulation of future blessings." },
+    { zh: "只要有勇氣，世界就沒有難事，恐懼是我們自設的圍牆。", en: "With courage, nothing is impossible. Fear is a self-made wall." },
+    { zh: "有佛法就有辦法，在絕望盡頭，智慧能為我們開拓出生路。", en: "With Dharma, there's a way. Wisdom carves a path through despair." },
+    { zh: "信譽是人的第二生命，失去信用，再多財富也難以立足。", en: "Reputation is life. Without credit, wealth cannot help you stand." },
+    { zh: "做事精進，為人厚道，對工作全力以赴，對他人留有寬厚。", en: "Be diligent and kind. Give your best and show mercy to others." },
+    { zh: "布施不僅是財物給予更是心念流動，哪怕是一個關心的眼神。", en: "Giving is a flow of intent. Even a caring look is an act of charity." },
+    { zh: "學習如春起之苗，不見其增日有所長；輟學如磨刀之石，日有所虧。", en: "Learning is like spring sprouts; growth is daily. Stopping is a loss." },
+    { zh: "寬大是福，慈悲是壽，寬容的心吸引福氣，慈悲的人自然長壽。", en: "Tolerance is bliss; mercy is longevity. Compassion brings long life." },
+    { zh: "心中有法，行中有禮，將佛法內化為準則，行為自然合禮。", en: "Dharma in heart, courtesy in action. Truth makes behavior proper." },
+    { zh: "自律是最好的管理，能掌控情緒與欲望的人，才是真正強者。", en: "Self-discipline is best. One who controls desires is truly strong." },
+    { zh: "懂得排隊就是有禮，在公共秩序中展現耐心，反映修養。", en: "Waiting in line is courtesy. Patience reflects one's cultivation." },
+    { zh: "人窮志不窮，物質匱乏可以忍受，精神墮落才是真正貧窮。", en: "Poor in wealth but not in will. Spiritual decay is true poverty." },
+    { zh: "做事要如織布，一針一線精雕細琢，專注與耐心織就燦爛人生。", en: "Work like weaving. Focus and patience weave a brilliant life." },
+    { zh: "一念之差天壤之別，在關鍵時刻守住善念，避免墮入深淵。", en: "A slight error makes a huge difference. Hold goodness at key moments." },
+    { zh: "柔和忍辱能化解暴戾之氣，像水柔軟，卻能穿透堅硬障礙。", en: "Gentle patience dissolves rage. Soft water pierces hard obstacles." },
+    { zh: "珍惜生命感恩因緣，這口呼吸是宇宙無數因緣的成就。", en: "Cherish life and be grateful. This breath is a cosmic achievement." },
+    { zh: "愛護公物體貼大眾，公共場合的克制與體諒是慈悲的實踐。", en: "Care for public property. Restraint is a practice of compassion." },
+    { zh: "共創幸福同圓種智，讓小我融入大眾利他，圓滿共同人格。", en: "Create bliss together. Merge the small self into the public good." },
+    { zh: "把歡喜帶回家，讓家人感受改變，家庭是修行的第一道場。", en: "Bring joy home. Family harmony is the first place of practice." },
+    { zh: "面上無嗔，口裡無嗔，最簡單的修行就是一個溫暖微笑。", en: "No anger in face or words. The simplest practice is a warm smile." },
+    { zh: "放下執著並非放棄，而是不再被外境所轉，找回主動權。", en: "Detachment is not giving up, but regaining control of your life." },
+    { zh: "誠實無欺是立身根本，欺騙贏得暫時利益，輸掉長遠人生。", en: "Honesty is the root. Deceit brings short gain but loses the race." },
+    { zh: "以德報怨是最高境界，用寬恕代替報復，終結仇恨循環。", en: "Repay resentment with virtue. Forgiveness ends the cycle of hate." },
+    { zh: "法界圓融萬物共生，體認眾生一體，不做出傷害他人的行為。", en: "Harmony in the Dharma. Knowing we are one prevents hurting others." },
+    { zh: "內心平安外境安寧，當我們不再對抗世界，世界就會對我們溫柔。", en: "Inner peace brings outer calm. Stop fighting for a kind world." },
+    { zh: "正向思考轉化負能量，看見黑暗中的星光是走出困境的關鍵。", en: "Positive thinking transforms energy. Starlight guides you out." },
+    { zh: "平凡中見偉大，簡單中見真誠，每一刻的真心都是永恆。", en: "See greatness in ordinary. Every sincere moment is eternal." },
+    { zh: "感恩是人生最美妙音符，讓貧窮變富有，讓孤獨變溫暖。", en: "Gratitude is life's best note; it enriches and warms the soul." },
+    { zh: "有佛法就有辦法，在絕望盡頭，智慧能為我們開拓出路。", en: "With Dharma, there's a way. Wisdom carves a path through despair." },
+    { zh: "自覺與覺他是人生的雙翼，先點亮自己，再去照亮迷途旅人。", en: "Self-awareness and awakening others are wings. Light the lost." },
+    { zh: "大公無私便是佛心，放下小我私慾，看見大我的浩瀚圓滿。", en: "Selflessness is Buddha's heart. Let go of ego for the Great Self." },
+    { zh: "行善最樂不為回報，付出的喜悅本身就是最好的報酬。", en: "Goodness is joy. The act of giving is the best reward itself." },
+    { zh: "心中有佛所見皆佛，以佛眼看世界，世界就是一片清淨。", en: "With Buddha in heart, all is Buddha. His eyes see a pure world." },
+    { zh: "謙虛是智慧的表現，愈是飽滿成熟的稻穗，愈懂得低頭。", en: "Humility is wisdom. Like ripe rice, the fuller it is, the lower it bows." },
+    { zh: "愛心是無國界護照，讓我們在任何地方找到心靈故鄉。", en: "Love is a borderless passport; find a spiritual home anywhere." },
+    { zh: "心懷感恩精進不懈，順應自然老實修行，慈悲喜捨法界圓融。", en: "Be grateful and diligent. Practice with honesty for cosmic harmony." },
+    { zh: "微笑是跨越國界的語言，真誠是通往心靈的唯一道路。", en: "A smile crosses borders; sincerity is the only path to the soul." },
+    { zh: "法水長流佛光普照，同圓種智共創幸福，圓滿自在的人生。", en: "May Dharma flow and Buddha shine. Create happiness for a perfect life." }
+];
+
     let currentLang = 'zh';
     const i18n = {
         zh: { nav: "衛塞全球點燈", desc: "點擊地圖點亮蓮花，您的善念將與全球同步顯示。", countLabel: "全球已匯聚：", unit: " 盞心燈", quote: "「願慈悲之光，照破世間黑暗。」", popup: "已點亮慈悲之光" },
         en: { nav: "VESAK GLOBAL LIGHTING", desc: "Click to light a lotus, synced globally.", countLabel: "Global Deeds: ", unit: " Lights", quote: "May the light of compassion illuminate the world.", popup: "Light of Compassion Lit" }
     };
-
-    // 這裡我先放 10 句範例，確認成功後我再給你 100 句
-    const quotes = [
-    { zh: "慈悲心是一切功德的母體。", en: "Compassion is the mother of all virtues." },
-    { zh: "提得起是聰明，放得下是智慧。", en: "To lift is clever; to let go is wisdom." },
-    { zh: "心好命就好，慈悲聖潔好。", en: "A good heart brings a good life; compassion is holy." },
-    { zh: "給人信心，給人希望，給人喜悅，給人方便。", en: "Give others confidence, hope, joy, and convenience." },
-    { zh: "容人、助人、愛人，是自救救人之道。", en: "Tolerance, helping, and loving are ways to save all." },
-    { zh: "願慈悲之光，照破世間黑暗。", en: "May the light of compassion illuminate the darkness." },
-    { zh: "心中有佛，所見皆佛。", en: "When there is Buddha in your heart, all you see is Buddha." },
-    { zh: "知足常樂，能忍自安。", en: "Contentment brings joy; patience brings peace." },
-    { zh: "微笑是世界上最美的色彩。", en: "A smile is the most beautiful color in the world." },
-    { zh: "讚美是世界上最動聽的聲音。", en: "Praise is the most beautiful sound in the world." },
-    { zh: "一花一世界，一葉一如來。", en: "A world in a flower, a Buddha in a leaf." },
-    { zh: "不忘初心，方得始終。", en: "Stay true to your original intent." },
-    { zh: "廣結善緣，自能事事順利。", en: "Build good affinities, all will go smoothly." },
-    { zh: "心安茅屋穩，性定菜根香。", en: "A peaceful mind stabilizes a hut; a calm nature flavors the roots." },
-    { zh: "靜坐常思己過，閒談莫論人非。", en: "Meditate on your faults; avoid discussing others." },
-    { zh: "口說好話，心想好意，身行好事。", en: "Speak good words, think good thoughts, do good deeds." },
-    { zh: "忍一時風平浪靜，退一步海闊天空。", en: "Endure a moment for calm; step back for an open sky." },
-    { zh: "隨緣不是隨便，而是順應自然。", en: "Following conditions is not being careless, but being natural." },
-    { zh: "微笑是跨越國界的語言。", en: "A smile is a language that crosses borders." },
-    { zh: "慈悲沒有敵人，智慧不起煩惱。", en: "Compassion has no enemies; wisdom has no worries." },
-    { zh: "大公無私，便是佛心。", en: "Selflessness is the heart of Buddha." },
-    { zh: "感恩是人生最美妙的音符。", en: "Gratitude is the most wonderful note in life." },
-    { zh: "心中有愛，世界就沒有黑暗。", en: "With love in the heart, there is no darkness." },
-    { zh: "平凡中見偉大，簡單中見真誠。", en: "See greatness in ordinary; see sincerity in simplicity." },
-    { zh: "看破、放下、自在。", en: "See through, let go, and be at ease." },
-    { zh: "凡事留餘地，建設好因緣。", en: "Leave space in all things for good connections." },
-    { zh: "改過必生智慧，護短終必受傷。", en: "Correcting faults breeds wisdom; hiding them leads to hurt." },
-    { zh: "能勤，時間自然就多。", en: "Being diligent creates more time." },
-    { zh: "忙，就是進步；苦，就是增上。", en: "Busyness is progress; hardship is improvement." },
-    { zh: "處事圓融，便是智慧。", en: "Handling matters with harmony is wisdom." },
-    { zh: "滿口好話，滿手好事，滿心喜悅。", en: "Good words, good deeds, and a joyful heart." },
-    { zh: "水滴石穿，不是力量，而是堅持。", en: "Water wears away stone through persistence." },
-    { zh: "心如止水，亂而不驚。", en: "Let the mind be like still water, calm amidst chaos." },
-    { zh: "一念之慈，萬眾受惠。", en: "A single kind thought benefits thousands." },
-    { zh: "捨得捨得，有捨才有得。", en: "Give to receive; only by letting go can you gain." },
-    { zh: "平靜的心，是最強大的武器。", en: "A calm mind is the most powerful weapon." },
-    { zh: "懂得排隊，就是有禮。", en: "Knowing how to wait in line is courtesy." },
-    { zh: "面上無嗔是供養，口裡無嗔吐妙香。", en: "A smile is an offering; kind words are a fragrance." },
-    { zh: "有志者，事竟成。", en: "Where there is a will, there is a way." },
-    { zh: "求人不如求己。", en: "Better to rely on yourself than on others." },
-    { zh: "大忙人往往有時間，懶惰人往往沒空。", en: "The busiest often have time; the laziest do not." },
-    { zh: "微笑是世界上最美的名片。", en: "A smile is the world's most beautiful business card." },
-    { zh: "人窮志不窮。", en: "One may be poor in possessions but not in spirit." },
-    { zh: "吃虧就是便宜。", en: "To suffer a loss is to gain a blessing." },
-    { zh: "只要有勇氣，世界就沒有難事。", en: "With courage, nothing in the world is impossible." },
-    { zh: "有佛法就有辦法。", en: "With the Dharma, there is always a way." },
-    { zh: "惜福、結緣、利人。", en: "Cherish blessings, build affinities, benefit others." },
-    { zh: "服務大眾，就是修行的開始。", en: "Serving the public is the beginning of practice." },
-    { zh: "把歡喜帶回家。", en: "Bring joy back to your home." },
-    { zh: "一半一半的世界。", en: "A world of half and half." },
-    { zh: "健康是最大的財富。", en: "Health is the greatest wealth." },
-    { zh: "信譽是人的第二生命。", en: "Reputation is one's second life." },
-    { zh: "誠信是處世的根本。", en: "Integrity is the foundation of social life." },
-    { zh: "不以物喜，不以己悲。", en: "Not swayed by gain or personal loss." },
-    { zh: "對失意人，莫談得意事。", en: "Do not boast of success to those who have failed." },
-    { zh: "做事要如織布，一針一線。", en: "Work like weaving, stitch by stitch." },
-    { zh: "自律是最好的管理。", en: "Self-discipline is the best management." },
-    { zh: "學習如春起之苗。", en: "Learning is like sprouts in the spring." },
-    { zh: "寬大是福，慈悲是壽。", en: "Generosity is bliss; compassion is longevity." },
-    { zh: "心中有法，行中有禮。", en: "The Dharma in heart, courtesy in action." },
-    { zh: "謙虛是智慧的表現。", en: "Humility is a sign of wisdom." },
-    { zh: "做事精進，為人厚道。", en: "Be diligent in work and kind to people." },
-    { zh: "布施不僅是給錢。", en: "Giving is more than just money." },
-    { zh: "愛語如春風。", en: "Kind words are like the spring breeze." },
-    { zh: "活在當下。", en: "Live in the present moment." },
-    { zh: "心好，一切都好。", en: "If the heart is good, all is well." },
-    { zh: "多一分原諒人，就多一分福德。", en: "Forgiveness increases one's merit." },
-    { zh: "看破世事，心無罣礙。", en: "See through the world to be free from worry." },
-    { zh: "微笑是最好的禮物。", en: "A smile is the best gift." },
-    { zh: "失敗是成功的墊腳石。", en: "Failure is a stepping stone to success." },
-    { zh: "一念之差，天壤之別。", en: "A single thought can make a world of difference." },
-    { zh: "公眾利益第一。", en: "Public interest comes first." },
-    { zh: "廣結善緣。", en: "Build many good affinities." },
-    { zh: "慈悲喜捨。", en: "Loving-kindness, compassion, joy, and equanimity." },
-    { zh: "給人方便。", en: "Offer convenience to others." },
-    { zh: "給人歡喜。", en: "Offer joy to others." },
-    { zh: "給人希望。", en: "Offer hope to others." },
-    { zh: "給人信心。", en: "Offer confidence to others." },
-    { zh: "老實修行。", en: "Practice with honesty." },
-    { zh: "心中有佛。", en: "Keep Buddha in your heart." },
-    { zh: "放下執著。", en: "Let go of attachments." },
-    { zh: "一切隨緣。", en: "Let everything follow its conditions." },
-    { zh: "精進不懈。", en: "Diligence without ceasing." },
-    { zh: "柔和忍辱。", en: "Gentleness and patience." },
-    { zh: "心懷感恩。", en: "Keep a grateful heart." },
-    { zh: "以德報怨。", en: "Repay resentment with virtue." },
-    { zh: "珍惜生命。", en: "Cherish life." },
-    { zh: "愛護公物。", en: "Take care of public property." },
-    { zh: "尊師重道。", en: "Respect teachers and the Way." },
-    { zh: "孝順父母。", en: "Be filial to parents." },
-    { zh: "誠實無欺。", en: "Be honest and without deceit." },
-    { zh: "勤儉持家。", en: "Manage the home with thrift." },
-    { zh: "保護環境。", en: "Protect the environment." },
-    { zh: "世界和平。", en: "World peace." },
-    { zh: "和諧社會。", en: "A harmonious society." },
-    { zh: "法界圓融。", en: "Harmony in the Dharma Realm." },
-    { zh: "共創幸福。", en: "Creating happiness together." },
-    { zh: "佛光普照。", en: "May the Buddha's light shine everywhere." },
-    { zh: "法水長流。", en: "May the Dharma water flow forever." },
-    { zh: "同圓種智。", en: "May all achieve perfect wisdom." }
-];
 
     window.toggleLang = function() {
         currentLang = currentLang === 'zh' ? 'en' : 'zh';
@@ -205,15 +192,20 @@
         push(pointsRef, { lat: e.latlng.lat, lng: e.latlng.lng, q_zh: q.zh, q_en: q.en });
     });
 
+    onChildAdded(pointsRef, (data) => {
+        const val = data.val();
+        const lotusIcon = L.divIcon({ className: 'lotus-marker', html: '🪷', iconSize: [40, 40], iconAnchor: [20, 20] });
+        const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
+        marker.bindPopup(`<div style="text-align:center;"><b style="color:gold;">${i18n[currentLang].popup}</b><br><p style="margin:10px 0;">${val.q_zh}</p><p style="font-style:italic; font-size:0.9em; color:#ccc;">${val.q_en}</p></div>`).openPopup();
+    });
 
     let lastCount = 0;
     function updateDisplay(count) {
         lastCount = count;
         document.getElementById('stats-area').innerHTML = `${i18n[currentLang].countLabel}<span id="count">${count}</span>${i18n[currentLang].unit}`;
     }
+
     onValue(pointsRef, (snapshot) => { updateDisplay(snapshot.size || 0); });
 </script>
 </body>
-
 </html>
-
