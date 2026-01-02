@@ -211,8 +211,8 @@
         popupAnchor: [0, -10]
     });
 
-    // 建立標記
-    const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
+    // 確保標記使用的是 lotusIcon
+const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
     
     // 綁定視窗
     marker.bindPopup(`<div style="text-align:center;">
@@ -254,6 +254,7 @@
 </script>
 </body>
 </html>
+
 
 
 
