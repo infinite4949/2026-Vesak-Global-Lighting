@@ -203,6 +203,8 @@
     // 顯示蓮花：修正顯示邏輯
     onChildAdded(pointsRef, (data) => {
         const val = data.val();
+        
+        // 1. 定義蓮花圖示 (使用 Emoji 避開圖檔路徑問題)
         const lotusIcon = L.divIcon({ 
             className: 'lotus-marker', 
             html: '🪷', 
@@ -210,14 +212,16 @@
             iconAnchor: [20, 20] 
         });
 
+        // 2. 建立標記並使用上述圖示
         const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
         
+        // 3. 綁定菜根譚視窗內容
         marker.bindPopup(`
-            <div style="padding:5px;">
-                <b style="color:gold;">${i18n[currentLang].popup}</b>
+            <div style="padding:5px; text-align:center;">
+                <b style="color:gold; font-size:1.1em;">${i18n[currentLang].popup}</b>
                 <hr style="border:0; border-top:1px solid #444; margin:8px 0;">
-                <p style="margin:0; font-weight:bold;">${val.q_zh}</p>
-                <p style="margin:5px 0 0; font-style:italic; font-size:0.9em; color:#ccc;">${val.q_en}</p>
+                <p style="margin:0; font-weight:bold; color:white;">${val.q_zh || ""}</p>
+                <p style="margin:5px 0 0; font-style:italic; font-size:0.9em; color:#ccc;">${val.q_en || ""}</p>
             </div>
         `);
     });
@@ -238,3 +242,4 @@
 </script>
 </body>
 </html>
+
