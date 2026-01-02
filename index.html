@@ -14,14 +14,26 @@
         .buddha-img { width: 220px; border-radius: 50%; box-shadow: 0 0 40px var(--gold); margin-bottom: 20px; }
         #map { height: 500px; width: 95%; max-width: 1100px; margin: 20px auto; border-radius: 15px; border: 2px solid var(--gold); z-index: 1; }
         
-        /* 蓮花呼吸燈特效 */
-        @keyframes breathe {
-            0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); }
-            50% { transform: scale(1.5); filter: drop-shadow(0 0 20px gold); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); }
-        }
-        .lotus-marker { display: flex !important; justify-content: center; align-items: center; font-size: 32px !important; animation: breathe 2s infinite; background: none !important; border: none !important; }
+        /* 必須給予寬高，蓮花才會顯示 */
+.lotus-marker {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    width: 40px !important; 
+    height: 40px !important;
+    font-size: 32px !important;
+    background: transparent !important;
+    border: none !important;
+    animation: breathe 2.5s infinite ease-in-out;
+    cursor: pointer;
+    z-index: 1000 !important;
+}
 
+@keyframes breathe {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+    50% { transform: scale(1.4); filter: drop-shadow(0 0 15px gold); opacity: 1; }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+}
         /* 加大版彈出視窗 */
         .leaflet-popup-content-wrapper { background: #112240 !important; color: white !important; border: 2px solid var(--gold); width: 320px !important; }
         .leaflet-popup-content { font-size: 1.1em; line-height: 1.6; }
@@ -193,12 +205,6 @@
         push(pointsRef, { lat: e.latlng.lat, lng: e.latlng.lng, q_zh: q.zh, q_en: q.en });
     });
 
-    onChildAdded(pointsRef, (data) => {
-        const val = data.val();
-        const lotusIcon = L.divIcon({ className: 'lotus-marker', html: '🪷', iconSize: [40, 40], iconAnchor: [20, 20] });
-        const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
-        marker.bindPopup(`<div style="text-align:center;"><b style="color:gold;">${i18n[currentLang].popup}</b><p style="margin:10px 0;">${val.q_zh}</p><p style="font-style:italic; font-size:0.9em; color:#ccc;">${val.q_en}</p></div>`).openPopup();
-    });
 
     let lastCount = 0;
     function updateDisplay(count) {
@@ -210,3 +216,4 @@
 </body>
 
 </html>
+
