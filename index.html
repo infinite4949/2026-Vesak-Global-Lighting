@@ -15,16 +15,25 @@
         #map { height: 500px; width: 95%; max-width: 1100px; margin: 20px auto; border-radius: 20px; border: 2px solid var(--gold); z-index: 1; position: relative; }
         
         /* 蓮花動畫與顯示修正 */
-        @keyframes breathe {
-            0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
-            50% { transform: scale(1.4); filter: drop-shadow(0 0 15px gold); opacity: 1; }
-            100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
-        }
-        .lotus-marker { 
-            display: flex !important; justify-content: center; align-items: center; 
-            font-size: 32px !important; animation: breathe 2.5s infinite; 
-            background: none !important; border: none !important; width: 40px !important; height: 40px !important;
-        }
+@keyframes breathe {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+    50% { transform: scale(1.4); filter: drop-shadow(0 0 15px gold); opacity: 1; }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px gold); opacity: 0.8; }
+}
+
+.lotus-marker { 
+    display: flex !important; 
+    justify-content: center; 
+    align-items: center; 
+    font-size: 36px !important; /* 稍微放大一點 */
+    animation: breathe 2.5s infinite ease-in-out; 
+    background: none !important; 
+    border: none !important; 
+    width: 40px !important; 
+    height: 40px !important;
+    z-index: 999 !important; /* 確保在所有地圖圖層之上 */
+    cursor: pointer;
+}
 
         /* 視窗加大 */
         .leaflet-popup-content-wrapper { background: #112240 !important; color: white !important; border: 2px solid var(--gold); width: 320px !important; border-radius: 15px; }
@@ -209,3 +218,4 @@
 </script>
 </body>
 </html>
+
