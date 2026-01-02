@@ -25,14 +25,12 @@
     display: flex !important; 
     justify-content: center; 
     align-items: center; 
-    font-size: 36px !important; /* 稍微放大一點 */
-    animation: breathe 2.5s infinite ease-in-out; 
-    background: none !important; 
-    border: none !important; 
+    font-size: 32px !important; 
+    background: transparent !important; /* 確保沒有背景方塊 */
+    border: none !important; /* 確保沒有邊框 */
     width: 40px !important; 
     height: 40px !important;
-    z-index: 999 !important; /* 確保在所有地圖圖層之上 */
-    cursor: pointer;
+    animation: breathe 2.5s infinite;
 }
 
         /* 視窗加大 */
@@ -204,14 +202,24 @@
     onChildAdded(pointsRef, (data) => {
     const val = data.val();
     
-    // 建立蓮花圖示，必須設定 iconSize 否則會是 0x0 像素
+    // 關鍵修正：必須定義 iconSize [寬, 高]
     const lotusIcon = L.divIcon({ 
         className: 'lotus-marker', 
         html: '🪷', 
         iconSize: [40, 40], 
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -15] // 讓彈出視窗出現在蓮花上方
+        iconAnchor: [20, 20], // 確保蓮花中心點對準點擊位置
+        popupAnchor: [0, -10]
     });
+
+    // 建立標記
+    const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
+    
+    // 綁定視窗
+    marker.bindPopup(`<div style="text-align:center;">
+        <b style="color:gold;">${i18n[currentLang].popup}</b>
+        <p>${val.q_zh}<br><i>${val.q_en}</i></p>
+    </div>`);
+});
 
     // 建立標記並加入地圖
     const marker = L.marker([val.lat, val.lng], { icon: lotusIcon }).addTo(map);
@@ -246,6 +254,7 @@
 </script>
 </body>
 </html>
+
 
 
 
