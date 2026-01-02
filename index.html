@@ -231,15 +231,21 @@
     // marker.openPopup(); 
 });
 
-    let lastCount = 0;
+   let lastCount = 0;
     function updateDisplay(count) {
         lastCount = count;
-        document.getElementById('stats-area').innerHTML = `${i18n[currentLang].countLabel}<span id="count">${count}</span>${i18n[currentLang].unit}`;
+        const area = document.getElementById('stats-area');
+        if (area) {
+            area.innerHTML = `${i18n[currentLang].countLabel}<span id="count">${count}</span>${i18n[currentLang].unit}`;
+        }
     }
 
-    onValue(pointsRef, (snapshot) => { updateDisplay(snapshot.size || 0); });
+    onValue(pointsRef, (snapshot) => { 
+        updateDisplay(snapshot.size || 0); 
+    });
 </script>
 </body>
 </html>
+
 
 
